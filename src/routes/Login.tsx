@@ -4,14 +4,14 @@ import { DefaultLayout } from "../layout/Layout";
 import { useAuth } from "../auth/AuthProvider";
 import { Navigate, useNavigate } from "react-router-dom";
 import { API_URL } from "../auth/constants";
-import type { AuthResponseError } from "../types/types";
+import type { AuthResponse, AuthResponseError } from "../types/types";
 
 const Login = () => {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [errorResponse, setErrorResponse] = useState("")
   const auth = useAuth()
-  const goTo= useNavigate()
+  const goTo = useNavigate()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -21,12 +21,15 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({  username, password }),
+        body: JSON.stringify({ username, password }),
       })
       if (response.ok) {
         console.log("Login successful")
         setErrorResponse("")
-        goTo("/")
+        const json = (await response.json()) as AuthResponse
+        if(json.body.accessToken && json.body.refreshToken){
+          auth.saveUser(json)
+        goTo("/dashboard")
       }
       else {
         console.log("Error creating user")
@@ -35,6 +38,7 @@ const Login = () => {
         return
       }
     }
+  }
     catch (error) {
       console.log(error)
     }
